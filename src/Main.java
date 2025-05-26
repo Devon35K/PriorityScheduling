@@ -27,6 +27,14 @@ public class Main{
         frame.setLayout(new BorderLayout(10, 10));
         frame.getContentPane().setBackground(Color.WHITE);
 
+        // Set custom window icon
+        try {
+            Image icon = new ImageIcon("image/icon.png").getImage();
+            frame.setIconImage(icon);
+        } catch (Exception e) {
+            System.err.println("Error loading icon: " + e.getMessage());
+        }
+
         // Top Panel with buttons and process count input
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
