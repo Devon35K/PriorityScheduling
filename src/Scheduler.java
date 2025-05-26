@@ -94,19 +94,19 @@ class Scheduler {
     private static String generateOutput(List<Main.Process> processes, StringBuilder sb) {
         double totalWaiting = 0, totalTurnaround = 0;
 
-        sb.append(String.format("%-15s%-20s%-20s\n", "Process", "Waiting Time", "Turnaround Time"));
-        sb.append("-".repeat(50)).append("\n");
+        sb.append(String.format("%-12s%-18s%-18s%-18s\n", "Process", "Completion Time", "Waiting Time", "Turnaround Time"));
+        sb.append("-".repeat(68)).append("\n");
 
         processes.sort(Comparator.comparingInt(p -> p.id));
         for (Main.Process p : processes) {
-            sb.append(String.format("%-15s%-20d%-20d\n", "P" + p.id, p.waiting, p.turnaround));
+            sb.append(String.format("%-12s%-18d%-18d%-18d\n", "P" + p.id, p.finish, p.waiting, p.turnaround));
             totalWaiting += p.waiting;
             totalTurnaround += p.turnaround;
         }
 
-        sb.append("-".repeat(50)).append("\n");
-        sb.append(String.format("%-35s%.2f\n", "Average Waiting Time:", totalWaiting / processes.size()));
-        sb.append(String.format("%-35s%.2f", "Average Turnaround Time:", totalTurnaround / processes.size()));
+        sb.append("-".repeat(68)).append("\n");
+        sb.append(String.format("%-50s%.2f\n", "Average Waiting Time:", totalWaiting / processes.size()));
+        sb.append(String.format("%-50s%.2f", "Average Turnaround Time:", totalTurnaround / processes.size()));
 
         return sb.toString();
     }
