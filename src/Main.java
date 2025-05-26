@@ -9,7 +9,8 @@ public class Main{
     private JTable table;
     private JTextArea outputArea;
     private JButton preemptiveButton, nonPreemptiveButton, generateDataButton, explainButton;
-    private JPanel ganttPanel;
+    private JScrollPane ganttScrollPane; // Changed to JScrollPane
+    private GanttChartPanel ganttPanel;
     private JSpinner processCountSpinner;
     private static final Color PRIMARY_COLOR = new Color(0, 120, 215);
     private static final Color SECONDARY_COLOR = new Color(245, 245, 245);
@@ -95,15 +96,26 @@ public class Main{
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
-        // Gantt Chart Panel
+        // Gantt Chart Panel with Scroll Pane
         ganttPanel = new GanttChartPanel();
-        ganttPanel.setBackground(SECONDARY_COLOR);
-        ganttPanel.setBorder(BorderFactory.createTitledBorder("Gantt Chart"));
+        ganttPanel.setBackground(Color.WHITE);
+
+        // Create scroll pane for Gantt chart
+        ganttScrollPane = new JScrollPane(ganttPanel);
+        ganttScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        ganttScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        ganttScrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Gantt Chart"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        ganttScrollPane.setBackground(SECONDARY_COLOR);
+        ganttScrollPane.getViewport().setBackground(Color.WHITE);
 
         // Split pane for output and Gantt chart
         JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                new JScrollPane(outputArea), ganttPanel);
+                new JScrollPane(outputArea), ganttScrollPane);
         bottomSplitPane.setDividerLocation(450);
+        bottomSplitPane.setResizeWeight(0.4); // Give more space to Gantt chart
 
         JSplitPane mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                 tableScrollPane, bottomSplitPane);
@@ -345,8 +357,16 @@ public class Main{
         }
 
         outputArea.setText(result);
-        ((GanttChartPanel)ganttPanel).setGanttEntries(ganttEntries);
-        ganttPanel.repaint();
+        ganttPanel.setGanttEntries(ganttEntries);
+
+        // Ensure the scroll pane updates its scrollbars
+        ganttScrollPane.revalidate();
+        ganttScrollPane.repaint();
+
+        // Optional: Scroll to the beginning to show the start of the chart
+        SwingUtilities.invokeLater(() -> {
+            ganttScrollPane.getHorizontalScrollBar().setValue(0);
+        });
     }
 
     static class Process {
