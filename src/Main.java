@@ -8,12 +8,15 @@ public class Main{
     private JFrame frame;
     private JTable table;
     private JTextArea outputArea;
+    private JTextArea executionTimelineArea;
+    private JLabel firstProcessLabel;
     private JButton preemptiveButton, nonPreemptiveButton, generateDataButton, explainButton;
-    private JScrollPane ganttScrollPane; // Changed to JScrollPane
+    private JScrollPane ganttScrollPane;
     private GanttChartPanel ganttPanel;
     private JSpinner processCountSpinner;
     private static final Color PRIMARY_COLOR = new Color(0, 120, 215);
     private static final Color SECONDARY_COLOR = new Color(245, 245, 245);
+    private static final Color ACCENT_COLOR = new Color(46, 125, 50);
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Main::new);
@@ -23,7 +26,7 @@ public class Main{
         // Initialize frame with modern look
         frame = new JFrame("Priority Scheduling Simulator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1000, 750);
+        frame.setSize(1200, 800);
         frame.setLayout(new BorderLayout(10, 10));
         frame.getContentPane().setBackground(Color.WHITE);
 
@@ -48,6 +51,18 @@ public class Main{
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(PRIMARY_COLOR);
         titlePanel.add(titleLabel);
+
+        // First Process Info Panel
+        JPanel firstProcessPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        firstProcessPanel.setBackground(Color.WHITE);
+        firstProcessLabel = new JLabel("First Process: Not determined yet");
+        firstProcessLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        firstProcessLabel.setForeground(ACCENT_COLOR);
+        firstProcessLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(ACCENT_COLOR, 1),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        firstProcessPanel.add(firstProcessLabel);
 
         // Controls row
         JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
@@ -75,6 +90,7 @@ public class Main{
         controlsPanel.add(explainButton);
 
         topPanel.add(titlePanel);
+        topPanel.add(firstProcessPanel);
         topPanel.add(controlsPanel);
 
         // Table setup
@@ -94,13 +110,27 @@ public class Main{
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
-        // Output area
+        // Output area for results
         outputArea = new JTextArea();
-        outputArea.setFont(new Font("Consolas", Font.PLAIN, 14));
+        outputArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         outputArea.setEditable(false);
         outputArea.setBackground(SECONDARY_COLOR);
-        outputArea.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Results"),
+
+        JScrollPane outputScrollPane = new JScrollPane(outputArea);
+        outputScrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Results Summary"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        // Execution Timeline area
+        executionTimelineArea = new JTextArea();
+        executionTimelineArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        executionTimelineArea.setEditable(false);
+        executionTimelineArea.setBackground(new Color(250, 250, 250));
+
+        JScrollPane timelineScrollPane = new JScrollPane(executionTimelineArea);
+        timelineScrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Execution Timeline"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
@@ -108,7 +138,6 @@ public class Main{
         ganttPanel = new GanttChartPanel();
         ganttPanel.setBackground(Color.WHITE);
 
-        // Create scroll pane for Gantt chart
         ganttScrollPane = new JScrollPane(ganttPanel);
         ganttScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         ganttScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
@@ -119,11 +148,17 @@ public class Main{
         ganttScrollPane.setBackground(SECONDARY_COLOR);
         ganttScrollPane.getViewport().setBackground(Color.WHITE);
 
-        // Split pane for output and Gantt chart
+        // Create tabbed pane for results and timeline
+        JTabbedPane resultsTabbedPane = new JTabbedPane();
+        resultsTabbedPane.addTab("Results Summary", outputScrollPane);
+        resultsTabbedPane.addTab("Execution Timeline", timelineScrollPane);
+        resultsTabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        // Split pane for results/timeline and Gantt chart
         JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                new JScrollPane(outputArea), ganttScrollPane);
-        bottomSplitPane.setDividerLocation(450);
-        bottomSplitPane.setResizeWeight(0.4); // Give more space to Gantt chart
+                resultsTabbedPane, ganttScrollPane);
+        bottomSplitPane.setDividerLocation(500);
+        bottomSplitPane.setResizeWeight(0.4);
 
         JSplitPane mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                 tableScrollPane, bottomSplitPane);
@@ -217,7 +252,6 @@ public class Main{
         }
         explanationText.setText(explanation.toString());
 
-        // Create a simple example Gantt chart for explanation
         JPanel exampleGantt = new ExampleGanttChartPanel(isPreemptive);
         exampleGantt.setBorder(BorderFactory.createTitledBorder("Example Gantt Chart"));
         exampleGantt.setPreferredSize(new Dimension(500, 100));
@@ -234,16 +268,13 @@ public class Main{
 
         int numProcesses = (Integer) processCountSpinner.getValue();
 
-        // Create a list of unique priorities to avoid duplicates
         Set<Integer> usedPriorities = new HashSet<>();
         List<Integer> availablePriorities = new ArrayList<>();
 
-        // First, try to assign unique priorities 1 through numProcesses
         for (int i = 1; i <= numProcesses; i++) {
             availablePriorities.add(i);
         }
 
-        // If we need more priorities than available unique ones, add higher numbers
         if (numProcesses > 10) {
             for (int i = numProcesses + 1; i <= numProcesses + 5; i++) {
                 availablePriorities.add(i);
@@ -257,7 +288,6 @@ public class Main{
             if (i < availablePriorities.size()) {
                 priority = availablePriorities.get(i);
             } else {
-                // Fallback: if we somehow run out of unique priorities
                 do {
                     priority = 1 + rand.nextInt(Math.max(5, numProcesses));
                 } while (usedPriorities.contains(priority) && usedPriorities.size() < numProcesses);
@@ -273,7 +303,12 @@ public class Main{
             });
         }
 
-        // Show a message about the generated data
+        // Reset displays
+        firstProcessLabel.setText("First Process: Not determined yet");
+        outputArea.setText("");
+        executionTimelineArea.setText("");
+        ganttPanel.setGanttEntries(new ArrayList<>());
+
         JOptionPane.showMessageDialog(frame,
                 String.format("Generated %d processes with unique priorities.\n" +
                                 "Process IDs: 1-%d\n" +
@@ -295,7 +330,6 @@ public class Main{
                 int burst = Integer.parseInt(table.getValueAt(i, 2).toString());
                 int priority = Integer.parseInt(table.getValueAt(i, 3).toString());
 
-                // Validate input
                 if (burst <= 0) {
                     JOptionPane.showMessageDialog(frame,
                             "Burst time must be greater than 0 for Process " + id,
@@ -329,7 +363,7 @@ public class Main{
             return;
         }
 
-        // Check for duplicate priorities and warn user
+        // Check for duplicate priorities
         Set<Integer> priorities = new HashSet<>();
         Set<Integer> duplicatePriorities = new HashSet<>();
         for (Process p : processes) {
@@ -352,26 +386,33 @@ public class Main{
             }
         }
 
-        String result;
-        List<GanttChartPanel.GanttEntry> ganttEntries;
+        Scheduler.SchedulingResult result;
         if (isPreemptive) {
-            Scheduler.SchedulingResult res = Scheduler.runPreemptive(processes);
-            result = res.output;
-            ganttEntries = res.ganttEntries;
+            result = Scheduler.runPreemptive(processes);
         } else {
-            Scheduler.SchedulingResult res = Scheduler.runNonPreemptive(processes);
-            result = res.output;
-            ganttEntries = res.ganttEntries;
+            result = Scheduler.runNonPreemptive(processes);
         }
 
-        outputArea.setText(result);
-        ganttPanel.setGanttEntries(ganttEntries);
+        // Update all displays
+        outputArea.setText(result.output);
+        ganttPanel.setGanttEntries(result.ganttEntries);
+        firstProcessLabel.setText(result.firstProcessInfo);
 
-        // Ensure the scroll pane updates its scrollbars
+        // Update execution timeline
+        StringBuilder timelineText = new StringBuilder();
+        timelineText.append("Execution Timeline Details:\n");
+        timelineText.append("=" .repeat(40)).append("\n\n");
+
+        for (Scheduler.ExecutionStep step : result.executionSteps) {
+            timelineText.append(step.toString()).append("\n");
+        }
+
+        executionTimelineArea.setText(timelineText.toString());
+
+        // Ensure UI components update properly
         ganttScrollPane.revalidate();
         ganttScrollPane.repaint();
 
-        // Optional: Scroll to the beginning to show the start of the chart
         SwingUtilities.invokeLater(() -> {
             ganttScrollPane.getHorizontalScrollBar().setValue(0);
         });
